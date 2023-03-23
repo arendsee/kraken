@@ -1,0 +1,79 @@
+import shell (headF)
+import kraken (KrakenConfig, krakenU, krakenReport, krakenHelp, krakenVersion)
+import table (Table, headT, nrowT)
+
+
+-- [.] Create a family of functions for operating on files, these need to support streaming
+-- [x] Make a basic Table datatype, it will be represented as lists of strings
+--     internally, so is not strongly typed. The types will have to be inferred
+--     at runtime.
+-- [.] Split Kraken into orthogonal functions, create a config record type for
+--     each. Make conflicting commands unrepresentable.
+-- [.] Think about what operations can be performed on each data type, this is a
+--     controlled functional vocabulary we can share with them
+
+
+------ Missing morloc features
+-- [ ] Record defaults
+-- [ ] Typeclasses - so that I can specialize generic functions like "pretty" and "head"
+-- [ ] Morloc REPL
+-- [ ] Literate programming
+-- [ ] Caching and checkpointing
+
+
+headF 12 "mini_SL342389.R1.fastq.gz"
+headF 12 "mini_SL342389.R2.fastq.gz"
+
+krakenConfig =
+   { db         = "~/databases/minikraken_20171101_8GB_dustmasked"
+   , threads    = 2
+   , checkNames = True
+   , minHits    = Int
+   , preload    = True
+   , quick      = True
+   }
+
+
+
+krakenReport = kraken
+  krakenConfig
+  "mini_SL342389.R1.fastq.gz"
+  "mini_SL342389.R2.fastq.gz"
+
+headT 8 krakenReport
+-- U       FRAG.1/1        0       201     0:70 A:31 0:70
+-- U       FRAG.2/1        0       201     0:70 A:31 0:70
+-- U       FRAG.3/1        0       201     0:70 A:31 0:70
+-- U       FRAG.4/1        0       201     0:70 A:31 0:70
+-- U       FRAG.5/1        0       201     0:70 A:31 0:70
+-- U       FRAG.6/1        0       201     0:70 A:31 0:70
+-- U       FRAG.7/1        0       201     0:70 A:31 0:70
+-- U       FRAG.8/1        0       201     0:70 A:31 0:70
+
+
+
+mpa = krakenMpaReport krakenConfig krakenReport
+
+headT 13 mpa
+-- 95.00  95      95      U       0       unclassified
+--  5.00  5       0       -       1       root
+--  5.00  5       0       D       10239     Viruses
+--  5.00  5       0       -       439488      ssRNA viruses
+--  5.00  5       0       -       35278         ssRNA positive-strand viruses, no DNA stage
+--  5.00  5       0       O       76804           Nidovirales
+--  5.00  5       0       F       11118             Coronaviridae
+--  5.00  5       0       -       693995              Coronavirinae
+--  3.00  3       0       -       233263                unclassified coronaviruses
+--  3.00  3       3       S       864596                  Bat coronavirus BM48-31/BGR/2008
+--  2.00  2       0       G       694002                Betacoronavirus
+--  2.00  2       0       S       694009                  SARS-related coronavirus
+--  2.00  2       2       -       227859                    SARS coronavirus
+
+nrowT mpa
+
+orderedSpecies = orderBy "abundance" mpa   -- abundance should be a enum, it should be visualized as a dropdown of column names
+headT orderedSpecies 
+
+plotPhylum mpa
+
+plotFamily mpa

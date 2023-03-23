@@ -1,0 +1,20 @@
+module stream
+
+export Stream
+export takeS
+
+source Py from "stream.py"
+  ( "packStream"
+  , "unpackStream"
+  , "takeS"
+  )
+
+packStream   :: pack   => [a] -> Stream a
+unpackStream :: unpack => Stream a -> [a]
+
+packStream   Py :: pack   => [a] -> "iterator" a
+unpackStream Py :: unpack => "iterator" a -> [a]
+
+-- mutates the Stream input
+takeS :: Int -> Stream a -> [a]
+takeS py :: "int" -> "iterator" a -> [a]
