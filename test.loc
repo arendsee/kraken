@@ -1,0 +1,28 @@
+module krakenTest (runKraken)
+module table (writeTsv)
+
+import kraken
+  ( KrakenConfig
+  , krakenU
+  , krakenReport
+  , krakenHelp
+  , krakenVersion
+  )
+
+type Py Filename = "str"
+type Py Unit = "None"
+
+runKraken :: Filename -> Filename -> Filename -> Filename -> ()
+runKraken db r1 r2 = writeTsv (
+        krankenU
+        { threads = 1
+        , checkNames = False
+        , db = "/home/z/src/git/milrd-test/test/minikraken_20171101_4GB_dustmasked"
+        , minHits = 2
+        , preload = False
+        , quick = False
+        }
+        "/home/z/src/git/milrd-test/test/reads_1.fq.gz"
+        "/home/z/src/git/milrd-test/test/reads_2.fq.gz"
+    )
+    "/dev/stdout"

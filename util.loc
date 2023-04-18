@@ -1,0 +1,6 @@
+module util (isFastqF)
+
+import io.shell (hasExtension)
+
+isFastqF :: Filename -> Bool
+isFastqF = hasExtension "fq"
