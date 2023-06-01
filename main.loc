@@ -3,11 +3,11 @@ module main (help, version, defaultKraken, defaultMPA)
 import table (readTsv as read, writeTsv as write)
 import base (run)
 import html (tag, toHtml, writeHtml)
-import kraken (KrakenConfig, krakenPaired, krakenMPA, krakenHelp, krakenVersion)
+import kraken (KrakenConfig, krakenPaired, krakenMPA, krakenHelp, krakenVersion, readKrakenReport, writeMPA)
 
 defaultConfig =
-  { db         = "test/minikraken_20171101_4GB_dustmasked"
-  , threads    = 2
+  { db         = "databases/minikraken_20171101_8GB_dustmasked"
+  , threads    = 1
   , checkNames = True
   , minHits    = 2
   , preload    = True
@@ -20,8 +20,4 @@ version = writeHtml "/dev/stdout" (tag "p" (toHtml (run krakenVersion)))
 
 defaultKraken krakenOutput r1 r2 = write krakenOutput (krakenPaired defaultConfig r1 r2)
 
-defaultMPA krakenOutput = krakenMPA defaultConfig (read krakenOutput)
-
--- exampleOutput = writeHtml (toHtml (defaultMPA (defaultKraken r1 r2))) where
---   r1 = "test/reads_1.fq.gz"
---   r2 = "test/reads_2.fq.gz"
+defaultMPA krakenOutput = writeMPA "/dev/stdout" (krakenMPA defaultConfig (readKrakenReport krakenOutput))

@@ -1,5 +1,7 @@
 __pycache__/
 test/
+databases/
+reads/
 
 nexus.py
 output.txt

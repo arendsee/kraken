@@ -7,4 +7,9 @@ clean:
 
 .PHONY: test
 test:
-	./nexus.py krakenPaired '{"threads":4,"checkNames":false,"db":"test/minikraken_20171101_4GB_dustmasked","minHits":2,"preload":true,"quick":true}' '"test/reads_1.fq.gz"' '"test/reads_2.fq.gz"'
+	# test the vtp default programs
+	morloc make main.loc
+	# run kraken, store table as TAB-delimited file
+	./nexus.py defaultKraken '"output.txt"' '"reads/mini_SL335871.R1.fastq.gz"' '"reads/mini_SL335871.R2.fastq.gz"'
+	# make MPA
+	./nexus.py defaultMPA '"output.txt"' > mpa.txt

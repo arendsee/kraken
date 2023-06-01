@@ -1,6 +1,9 @@
 import subprocess
 import io
 import pandas as pd
+import tempfile
+import os
+import sys
 
 kraken_report_column_names = ["classified", "sequenceId", "taxon", "length", "LCA"]
 kraken_report_summary_names = ["percent_abundance", "count", "countNode", "taxon", "rank"]
@@ -31,12 +34,12 @@ def krakenPaired(config, r1file, r2file):
 
     result = subprocess.run([
         "kraken",
+        *opts,
         "--threads", str(config["threads"]),
         "--paired",
         "--preload",
         "--db",
         config["db"],
-        *opts,
         r1file,
         r2file,
     ], capture_output=True, encoding="ascii")
@@ -67,22 +70,40 @@ def krakenReport(config, krakenOutputTable):
     else:
         raise Exception(result.stderr)
 
+def readKrakenReport(filename):
+    return pd.read_csv(
+        filename,
+        sep="\t", # type:ignore
+        names=kraken_report_column_names, # type:ignore
+    )
 
 def krakenMPA(config, krakenOutputTable):
-    result = subprocess.run(
-        [ "kraken-mpa-report", "--db", config["db"]],
-        input=krakenOutputTable.to_csv(sep="\t", header=False),
-        capture_output=True,
-        encoding="ascii",
+    with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        krakenOutputTable.to_csv(tmp.name, sep="\t", index=False, header=False)
+        tmp_filename = tmp.name
+
+    try:
+        result = subprocess.run(
+            ["kraken-mpa-report", "--db", config["db"], tmp_filename],
+            capture_output=True,
+            encoding="ascii",
         )
-    if(result.returncode == 0):
-        mpa = dict()
-        for line in result.stdout:
-            (lineage, count) = line.split("\t")
-            mpa[lineage] = int(count)
-        return mpa
-    else:
-        raise Exception(result.stderr)
+
+        if result.returncode == 0:
+            mpa = dict()
+            for line in result.stdout.strip().split("\n"):
+                (lineage, count) = line.split("\t")
+                mpa[lineage] = int(count)
+            return mpa
+        else:
+            raise Exception(result.stderr)
+    finally:
+        os.remove(tmp_filename)
+
+def writeMPA(filename, mpa):
+    with open(filename, "w") as f:
+        for (lineage, count) in mpa.items():
+            print(f"{lineage}\t{count}", file=f)
 
 
 def krakenVersion():

@@ -3,10 +3,12 @@ module kraken
   , krakenHelp
   , krakenVersion
   , krakenPaired
+  , readKrakenReport
   , krakenMPA
+  , writeMPA
   )
 
-import conventions (Map, Str, Int, Real, Bool, Filename)
+import conventions (Map, Str, Int, Real, Bool, Filename, Unit)
 import table (Table, headT)
 
 record KrakenConfig = KrakenConfig
@@ -30,15 +32,21 @@ record Py KrakenConfig = "dict" -- record is stored as a Python dictionary
 source Py from "kraken.py"
   ( "krakenPaired"
   , "krakenMPA"
+  , "writeMPA"
   , "krakenVersion"
   , "krakenHelp"
+  , "readKrakenReport"
   )
 
 krakenPaired :: KrakenConfig -> r1:Filename -> r2:Filename -> Table
 krakenPaired Py :: KrakenConfig -> r1:Filename -> r2:Filename -> Table
 
+readKrakenReport :: Filename -> Table
+
 krakenMPA :: KrakenConfig -> Table -> Map Str Int
 krakenMPA Py :: KrakenConfig -> Table -> Map Str Int
+
+writeMPA :: Filename -> Map Str Int -> ()
 
 krakenHelp :: () -> Str
 krakenVersion :: () -> Str
