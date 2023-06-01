@@ -1,2 +1,6 @@
 __pycache__/
 test/
+
+nexus.py
+output.txt
+pool.*

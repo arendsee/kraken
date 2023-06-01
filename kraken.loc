@@ -1,16 +1,13 @@
 module kraken
   ( KrakenConfig
-  , krakenU
-  , krakenReport
   , krakenHelp
   , krakenVersion
+  , krakenPaired
+  , krakenMPA
   )
 
-import base (filterKey, Map)
+import conventions (Map, Str, Int, Real, Bool, Filename)
 import table (Table, headT)
-import string (search)
-import pybase (Int, Real, Bool, Str, filterKey)
-
 
 record KrakenConfig = KrakenConfig
   { threads    :: Int  -- Number of threads (default: 1)
@@ -21,8 +18,6 @@ record KrakenConfig = KrakenConfig
   , quick      :: Bool -- Quick operation (use first hit or hits)
   }
 
--- We currently have to define a language specific type for each language
--- In the future, this may be automatically derived.
 record Py KrakenConfig = "dict" -- record is stored as a Python dictionary
   { threads    :: "int"  --
   , checkNames :: "bool" -- The python types aligning to each general type
@@ -33,141 +28,17 @@ record Py KrakenConfig = "dict" -- record is stored as a Python dictionary
   }
 
 source Py from "kraken.py"
-  ( "krakenPaired" as krakenU
-  , "krakenReport"
+  ( "krakenPaired"
+  , "krakenMPA"
   , "krakenVersion"
   , "krakenHelp"
   )
 
-type py Filename = "str"
-
-krakenU
-  :: KrakenConfig
-  -> r1:Filename
-  -> r2:Filename
-  -> Table
-  -- currently unsupported, but in the future names of arguments may be used to specify constraints
-  -- where
-  --   nrow r1 != norw r2
-  --   (r1[4 * (i // 4)] == r2[4 * (i // 4)] forall i <- 0:(nrow r1 - 1))
-
-krakenU Py
-  :: KrakenConfig
-  -> Filename
-  -> Filename
-  -> Table
-
--- converts a kraken output table to a taxon report table
-krakenReport :: KrakenConfig -> Table -> Table
-krakenReport Py :: KrakenConfig -> Table -> Table
+krakenPaired :: KrakenConfig -> r1:Filename -> r2:Filename -> Table
+krakenPaired Py :: KrakenConfig -> r1:Filename -> r2:Filename -> Table
 
 krakenMPA :: KrakenConfig -> Table -> Map Str Int
 krakenMPA Py :: KrakenConfig -> Table -> Map Str Int
 
-mpaSpecies :: Map Str Int -> Map Str Int
-mpaSpecies = filterKey (search "s__" . fst)
-
 krakenHelp :: () -> Str
-krakenHelp Py :: () -> Str
-
 krakenVersion :: () -> Str
-krakenVersion Py :: () -> Str
-
-readKrakenReport :: Filename -> Table
-readKrakenReport Py :: Filename -> Table
-
-readkKrakenSummary :: Filename -> Table
-readkKrakenSummary Py :: Filename -> Table
-
-
-
--- type MPA = Tree (Str, Str) () Int
---
--- subtrees :: (Tree n e l -> Bool) -> [Tree n e l]
--- traces :: Tree n e l -> [([n], l)]
--- node :: Tree n e l -> n
--- leaf :: Tree n e l -> e
--- edge :: Tree n e l -> l
---
--- findSpeciesCounts :: MPA -> [(Str, Int)]
--- findSpeciesCounts = map (onSnd (join " ")) . concat . map traces . subtrees (eq "s" . snd . node)
---
--- allTraces :: Tree n e l -> [([n], l)]
---
--- asMpa :: Tree (Str, Str) () Int -> [(Str, Int)]
--- asMpa =
---   . mapNode (onFst (join "|" . map (\n -> join "__" [fst n, snd n])))
---   . pull
---       (\i -> ([], i))
---       (\n xs -> (n, sum (map snd xs))
---   . mapNode reverse
---   . push
---       (\t x -> cons (node t) x
---       (\a n -> a)
---       (\a i -> (a, i))
---       (\a e -> e)
---       []
---
--- -- -- counts per species
--- -- grep "s__" f | sed "s/.*s__//"
--- -- -- counts per order
--- -- grep "o__[^|]*v	" f | sed "s/.*o__//"
--- -- -- counts per family
--- -- grep "f__[^|]*v	" f | sed "s/.*o__//"
---
---
--- record MinimizerParameters = MinimizerParameters
---     { kmerLength :: Int -- minimizer k-mer length
---     , windowSize :: Int -- window size
---     , hashSize :: Int   -- hash size (take the generated int and modulo by this value, gives array size)
---     }
---
--- type Minimizer = Int
--- type Taxon = Int
--- type Sequene = Str
---
--- minimizers :: MinimizerParameters -> Sequence -> [Minimizer]
---
--- optimizeParam :: Tree Taxon () [Sequence] -> MinimizerParameters
---
--- createDb :: MinimizerParameters -> Tree Taxon () [Sequence] -> [[Taxon]]
---
--- map classifyPair
---
--- classifyRead :: [[Taxon]] -> Str -> [Taxon]
--- classifyRead
---
--- classifyRead :: [Str] -> Str -> [Int]
---
--- pairedReads = zipWith instersection (map classifyRead r1) (map classifyRead r2)
---
--- -- "Table" is a dynamic table with types that are only inferred at runtime. This
--- -- limits its use in morloc since we can't use any function that is dependent on
--- -- column type. We can reverse a table, subset the rows by position, or select
--- -- columns by name. If we want a deeper interface, we will need the typed tables
--- -- There is experimental support for these. But they are verbose and not well
--- -- tested.
---
--- table KrakenOut = KrakenOut
---     { classified :: Bool
---     , sequenceId :: Int
---     , taxonomyId :: Int
---     , length :: Int
---     , lca :: Str
---     }
---
--- table Py KrakenOut = KrakenOut
---     { classified :: "bool"
---     , sequenceId :: "int"
---     , taxonomyId :: "int"
---     , length :: "int"
---     , lca :: "str"
---     }
---
--- table R KrakenOut = KrakenOut
---     { classified :: "logical"
---     , sequenceId :: "integer"
---     , taxonomyId :: "integer"
---     , length :: "integer"
---     , lca :: "character"
---     }

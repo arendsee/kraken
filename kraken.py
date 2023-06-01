@@ -36,6 +36,7 @@ def krakenPaired(config, r1file, r2file):
         "--preload",
         "--db",
         config["db"],
+        *opts,
         r1file,
         r2file,
     ], capture_output=True, encoding="ascii")
@@ -53,7 +54,7 @@ def krakenPaired(config, r1file, r2file):
 def krakenReport(config, krakenOutputTable):
     result = subprocess.run(
         [ "kraken-report", "--db", config["db"]],
-        pd.to_csv(krakenOutputTable, sep="\t", header=False),
+        krakenOutputTable.to_csv(sep="\t", header=False),
         capture_output=True,
         encoding="ascii",
         )
@@ -70,7 +71,7 @@ def krakenReport(config, krakenOutputTable):
 def krakenMPA(config, krakenOutputTable):
     result = subprocess.run(
         [ "kraken-mpa-report", "--db", config["db"]],
-        pd.to_csv(krakenOutputTable, sep="\t", header=False),
+        input=krakenOutputTable.to_csv(sep="\t", header=False),
         capture_output=True,
         encoding="ascii",
         )
@@ -84,68 +85,17 @@ def krakenMPA(config, krakenOutputTable):
         raise Exception(result.stderr)
 
 
-def writeMPA(table):
-    pass
-
-
-def writeReport(table):
-    pass
-
-
-def readKrakenReport(filename):
-    return pd.read_csv(filename, sep="\t", names=kraken_report_column_names) # type:ignore
-
-
-def readKrakenSummary(filename):
-    return pd.read_csv(filename, sep="\t", names=kraken_summary_column_names) # type:ignore
-
-
 def krakenVersion():
     result = subprocess.run(["kraken", "-v"], capture_output=True, encoding="ascii")
     if result.returncode == 0:
-        return result.stdout
+        return result.stdout.strip()
     else:
-        raise Exception(result.stderr)
+        return "kraken executable not found"
 
 
 def krakenHelp():
     result = subprocess.run(["kraken", "-h"], capture_output=True, encoding="ascii")
     if result.returncode == 0:
-        return result.stderr
+        return result.stderr.strip()
     else:
-        raise Exception(result.stderr)
-
-
-#  Usage: kraken [options] <filename(s)>
-#
-#  Options:
-#    --db NAME               Name for Kraken DB
-#                            (default: none)
-#    --threads NUM           Number of threads (default: 1)
-#    --fasta-input           Input is FASTA format
-#    --fastq-input           Input is FASTQ format
-#    --fastq-output          Output in FASTQ format
-#    --gzip-compressed       Input is gzip compressed
-#    --bzip2-compressed      Input is bzip2 compressed
-#    --quick                 Quick operation (use first hit or hits)
-#    --min-hits NUM          In quick op., number of hits req'd for classification
-#                            NOTE: this is ignored if --quick is not specified
-#    --unclassified-out FILENAME
-#                            Print unclassified sequences to filename
-#    --classified-out FILENAME
-#                            Print classified sequences to filename
-#    --out-fmt FORMAT        Format for [un]classified sequence output. supported
-#                            options are: {legacy, paired, interleaved}
-#    --output FILENAME       Print output to filename (default: stdout); "-" will
-#                            suppress normal output
-#    --only-classified-output
-#                            Print no Kraken output for unclassified sequences
-#    --preload               Loads DB into memory before classification
-#    --paired                The two filenames provided are paired-end reads
-#    --check-names           Ensure each pair of reads have names that agree
-#                            with each other; ignored if --paired is not specified
-#    --help                  Print this message
-#    --version               Print version information
-#
-#  If none of the *-input or *-compressed flags are specified, and the
-#  file is a regular file, automatic format detection is attempted.
+        return "kraken executable not found"

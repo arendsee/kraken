@@ -1,78 +1,27 @@
-module main (*)
+module main (help, version, defaultKraken, defaultMPA)
 
-import io.shell (headF)
-import kraken (KrakenConfig, krakenU, krakenReport, krakenHelp, krakenVersion)
-import table (Table, headT, nrowT)
-import util (isFastqF)
+import table (readTsv as read, writeTsv as write)
+import base (run)
+import html (tag, toHtml, writeHtml)
+import kraken (KrakenConfig, krakenPaired, krakenMPA, krakenHelp, krakenVersion)
 
-record Output = Output
-  { krakenReport :: Table
-  , krakenMpa    :: Table
-  , speciesPlot  :: PDF
-  , phylumPlot   :: PDF
+defaultConfig =
+  { db         = "test/minikraken_20171101_4GB_dustmasked"
+  , threads    = 2
+  , checkNames = True
+  , minHits    = 2
+  , preload    = True
+  , quick      = True
   }
 
-run :: KrakenConfig -> PlotConfig -> Filename -> Filename -> Output
+help = writeHtml "/dev/stdout" (tag "p" (toHtml (run krakenHelp)))
 
------- Missing morloc features
--- [ ] Record defaults
--- [ ] Typeclasses - so that I can specialize generic functions like "pretty" and "head"
--- [ ] Literate programming
--- [ ] Caching and checkpointing
+version = writeHtml "/dev/stdout" (tag "p" (toHtml (run krakenVersion)))
 
--- Do we want a REPL? Or do we want a notebook? Or do we want a conventional compilable program?
+defaultKraken krakenOutput r1 r2 = write krakenOutput (krakenPaired defaultConfig r1 r2)
 
+defaultMPA krakenOutput = krakenMPA defaultConfig (read krakenOutput)
 
-o1 = headF 12 "mini_SL342389.R1.fastq.gz"
-o2 = headF 12 "mini_SL342389.R2.fastq.gz"
-
-krakenReport = kraken krakenConfig "mini_SL342389.R1.fastq.gz" "mini_SL342389.R2.fastq.gz"
-  -- where
-  --   krakenConfig =
-  --      { db         = "minikraken_20171101_8GB_dustmasked"
-  --      , threads    = 2
-  --      , checkNames = True
-  --      , minHits    = Int
-  --      , preload    = True
-  --      , quick      = True
-  --      }
-
-
-
-o3 = headT 8 krakenReport
--- U       FRAG.1/1        0       201     0:70 A:31 0:70
--- U       FRAG.2/1        0       201     0:70 A:31 0:70
--- U       FRAG.3/1        0       201     0:70 A:31 0:70
--- U       FRAG.4/1        0       201     0:70 A:31 0:70
--- U       FRAG.5/1        0       201     0:70 A:31 0:70
--- U       FRAG.6/1        0       201     0:70 A:31 0:70
--- U       FRAG.7/1        0       201     0:70 A:31 0:70
--- U       FRAG.8/1        0       201     0:70 A:31 0:70
-
-
-
-mpa = krakenMpaReport krakenConfig krakenReport
-
-o4 = headT 13 mpa
--- 95.00  95      95      U       0       unclassified
---  5.00  5       0       -       1       root
---  5.00  5       0       D       10239     Viruses
---  5.00  5       0       -       439488      ssRNA viruses
---  5.00  5       0       -       35278         ssRNA positive-strand viruses, no DNA stage
---  5.00  5       0       O       76804           Nidovirales
---  5.00  5       0       F       11118             Coronaviridae
---  5.00  5       0       -       693995              Coronavirinae
---  3.00  3       0       -       233263                unclassified coronaviruses
---  3.00  3       3       S       864596                  Bat coronavirus BM48-31/BGR/2008
---  2.00  2       0       G       694002                Betacoronavirus
---  2.00  2       0       S       694009                  SARS-related coronavirus
---  2.00  2       2       -       227859                    SARS coronavirus
-
-o5 = nrowT mpa
-
-orderedSpecies = orderBy "abundance" mpa   -- abundance should be a enum, it should be visualized as a dropdown of column names
-o6 = headT orderedSpecies 
-
-o7 = plotPhylum mpa
-
-o8 = plotFamily mpa
+-- exampleOutput = writeHtml (toHtml (defaultMPA (defaultKraken r1 r2))) where
+--   r1 = "test/reads_1.fq.gz"
+--   r2 = "test/reads_2.fq.gz"

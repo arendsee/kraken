@@ -1,1 +1,158 @@
-# Kraken wrapper
+Simplified Metagenomics Workflow for High School Students
+
+View first 10 lines of R1_fastq:
+
+```bash
+zcat mini_SL342389.R1.fastq.gz | head
+```
+
+View first 10 lines of R2_fastq
+
+```bash
+zcat mini_SL342389.R2.fastq.gz | head
+```
+
+Run Kraken:
+
+```bash
+kraken --gzip-compressed --fastq-input --threads 2 --paired --preload --db ~/databases/minikraken_20171101_8GB_dustmasked mini_SL342389.R1.fastq.gz mini_SL342389.R2.fastq.gz > mini_SL342389_taxonomic_report.csv
+```
+
+View first 10 lines:
+
+```bash
+head mini_SL342389_taxonomic_report.csv
+```
+
+Convert to Metaphlan (MPA) Format:
+
+```bash
+kraken-mpa-report --db ~/databases/minikraken_20171101_8GB_dustmasked mini_SL342389_taxonomic_report.csv > mini_SL342389_final_taxonomic_results.mpa
+```
+
+
+First 20 lines:
+
+```bash
+head -20 mini_SL342389_final_taxonomic_results.mpa
+```
+
+
+Last 20 lines:
+
+```bash
+tail -20 mini_SL342389_final_taxonomic_results.mpa
+```
+
+
+Select species-level assignments:
+
+```bash
+grep 's__' mini_SL342389_final_taxonomic_results.mpa > mini_SL342389_species_only.tsv
+```
+
+View first 10 lines (confirm only spp-level taxanomic assignments):
+
+```bash
+head mini_SL342389_species_only.tsv
+```
+
+Count spp:
+
+```bash
+wc -l mini_SL342389_species_only.tsv
+```
+
+Identify: Abundant Species
+
+```r
+#This line reads in the mini_SL342389_species_only.tsv file using the read.csv() function. 
+
+taxa_mini_SL342389_species = read.csv('~/reads/mini_SL342389_species_only.tsv', header=FALSE, sep='\t')
+
+#This line orders the data in the taxa_mini_SL342389_species variable based on the values in the second column (V2) in descending order. 
+
+taxa_mini_SL342389_species_ordered <- taxa_mini_SL342389_species[order(taxa_mini_SL342389_species$V2, decreasing = TRUE), ]  
+
+#This line outputs the first five rows of the ordered data in the taxa_mini_SL342389_species_ordered variable.
+
+head(taxa_mini_SL342389_species_ordered, 5)
+
+```
+Abundance of Phyla
+```r
+
+library(ggplot2)  
+
+taxa_mini_SL342389 <- read.csv('~/mini_SL342389_taxa.csv', header=TRUE, sep=',') 
+
+phyla_mini_SL342389 <- taxa_mini_SL342389[taxa_mini_SL342389$rank == 'phylum',] 
+
+phyla_mini_SL342389 <- phyla_mini_SL342389[phyla_mini_SL342389$percent_abundance >= 0.3,] 
+
+ggplot(phyla_mini_SL342389 , aes(x=sample, y=percent_abundance, fill=taxon)) +
+    geom_bar(stat="identity") +  
+    xlab('Sample') + 
+    ylab('Abundance') +
+    labs(fill='Phylum') +
+    theme(axis.text.x = element_text(angle = 90))
+```
+
+Abundance of Families
+
+```r
+library(ggplot2)  
+taxa_mini_SL342389 <- read.csv('~/mini_SL342389_taxa.csv', header=TRUE, sep=',') 
+family_mini_SL342389 <- taxa_mini_SL342389[taxa_mini_SL342389$rank == 'family',] 
+family_mini_SL342389 <- family_mini_SL342389[family_mini_SL342389$percent_abundance >= 0.3,] 
+ggplot(family_mini_SL342389 , aes(x=sample, y=percent_abundance, fill=taxon)) +
+    geom_bar(stat="identity") +  
+    xlab('Sample') + 
+    ylab('Abundance') +
+    labs(fill='Family') +
+    theme(axis.text.x = element_text(angle = 90)) 
+```
+
+Example of how I envision Morloc workflows:
+
+first_10_mini_SL342389.R1.fastq.gz = head(mini_SL342389.R1.fastq.gz, 10)
+
+first_10_mini_SL342389.R2.fastq.gz = head(mini_SL342389.R2.fastq.gz, 10)
+
+[we would do trimming/filtering and human read removal hear, but omit it for high school students due to time constraints. We do talk about the ommitted steps at the end of the project]
+
+mini_SL342389_taxonomic_report.csv = kraken(mini_SL342389.R1.fastq.gz, mini_SL342389.R2.fastq.gz, [gzip-compressed, paired, fastq-input, database = minikraken_20171101_8GB_dustmasked, ...])
+
+first_10_mini_SL342389_taxonomic_report.csv = mini_SL342389_taxonomic_report.csv = head(mini_SL342389_taxonomic_report.csv, 10)
+
+mini_SL342389_final_taxonomic_results.mpa = kraken-mpa-report(mini_SL342389_taxonomic_report.csv, [database = minikraken_20171101_8GB_dustmasked]) 
+
+first_20_mini_SL342389 = head(mini_SL342389_final_taxonomic_results.mpa, 20)
+
+last_20_mini_SL342389 = tail(mini_SL342389_final_taxonomic_results.mpa, 20)
+
+mini_SL342389_species_only.tsv = grep(mini_SL342389_final_taxonomic_results.mpa, [search-term = 's__'])  
+
+first_10_mini_SL342389_species_only.tsv = head(mini_SL342389_species_only.tsv, 10)
+
+line_count_mini_SL342389_species_only.tsv = wc(mini_SL342389_species_only.tsv, [count-lines])
+
+top_5_species = head(mini_SL342389_species_only.tsv, [5, ordered = true, decreasing = true])
+
+phylum_barplot = barplot(mini_SL342389_taxa.csv, [rank == 'phylum', percent_abundance >= 0.3, x-axis_label = 'Sample', y-axis_label = 'Abundance', legend = 'Phylum', ...])
+
+family_barplot = barplot(mini_SL342389_taxa.csv, [rank == 'family', percent_abundance >= 0.3, x-axis_label = 'Sample', y-axis_label = 'Abundance', legend = 'Family', ...])
+
+Ideas:
+
+- this is the highschool version, so it doesn't trim/filter or remove human reads, due to time constraints. 
+
+- These two steps could be compined in Morloc:
+
+1. kraken(mini_SL342389.R1.fastq.gz, mini_SL342389.R2.fastq.gz, [gzip-compressed, paired, fastq-input, database = minikraken_20171101_8GB_dustmasked, ...])
+
+2. kraken-mpa-report --db ~/databases/minikraken_20171101_8GB_dustmasked mini_SL342389_taxonomic_report.csv > mini_SL342389_final_taxonomic_results.mpa
+
+Synthesis: 
+
+(mini_SL342389_taxonomic_report.csv, mini_SL342389_final_taxonomic_results.mpa) = kraken(mini_SL342389.R1.fastq.gz, mini_SL342389.R2.fastq.gz, [gzip-compressed, paired, fastq-input, database = minikraken_20171101_8GB_dustmasked, ...])
